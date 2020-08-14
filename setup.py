@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="shell_control", # Replace with your own username
+    name="ssh_control", # Replace with your own username
     version="0.0.1",
     author="Antony Jr.",
     author_email="antonyjr@protonmail.com",
@@ -19,4 +19,11 @@ setuptools.setup(
         "Operating System :: Linux",
     ],
     python_requires='>=3.6',
+    install_requires = ['requests' , 'rich' , 'python-gnupg'],
+    entry_points = {
+        'console_scripts': [
+            'ssh-control=ssh_control:ExecuteClient',
+            'ssh-control-configure=ssh_control:ExecuteConfigure',
+        ],
+    }
 )
