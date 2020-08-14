@@ -2,12 +2,17 @@ import gnupg
 import requests
 import json
 
+import logging 
+
 class SSHControlClient(object):
     def __init__(self, host):
         self.gpg = gnupg.GPG()
 
         if host[len(host)-1] != '/':
             host += '/'
+
+        log = logging.getLogger('rich')
+        log.info("Set HOST = {}".format(host))
 
         self.host = host
 
@@ -18,25 +23,34 @@ class SSHControlClient(object):
 
     # Returns True if the host is Running SSH Control Server
     def verify_host(self):
+        log = logging.getLogger('rich')
+
         try:
-            response = requests.get(host)
+            response = requests.get(self.host)
         except:
+            log.error("Cannot reach host")
             return False
 
         if response.status_code != 200:
+            log.error("Bad Response: {}".format(response.status_code))
             return False
 
         try:
             json_parsed = json.loads(response.content)
         except:
+            log.error("Cannot Parse JSON")
             return False
 
 
         try:
             if json_parsed["ssh-control-uuid"] not in self.valid_server_uuid:
+                log.error("Invalid SSH Control Server UUID: {}".format(json_parsed['ssh-control-uuid']))
                 return False
         except:
+            log.error("Cannot Parse JSON")
             return False
+
+        return True
 
     def ssh_on(self):
         return self._request_server('request-ssh-on')
@@ -46,18 +60,28 @@ class SSHControlClient(object):
 
     # Returns True if the command executed successfully.
     def _request_server(self, operation):
+        log = logging.getLogger('rich')
         if not self.verify_host():
+            log.info("HOST is not a valid SSH Control Server")
             return False
+
+        log.info("Sending Operation: {}".format(operation))
 
         try:
             response = requests.post(self.host + 'request', {"operation": operation})
         except:
+            log.error("Failed to acquire request token")
+            return False
+
+        if response.status_code != 200:
+            log.error("Bad Response Code: {}".format(response.status_code))
             return False
 
         json_parsed = None
         try:
             json_parsed = json.loads(response.content)
         except:
+            log.error("Cannot Parse JSON")
             return False
 
         head = {"Authorization" : "Bearer {}".format(json_parsed['request_token'])}
@@ -66,18 +90,25 @@ class SSHControlClient(object):
         secret = self.gpg.decrypt(json_parsed['gpg_encrypted_secret'])
 
         try:
-            execute_response = requests.post(self.host + 'execute', {"secret": "{}".format(secret)}, header=head)
+            execute_response = requests.post(self.host + 'execute', data={"secret": "{}".format(secret) }, headers=head)
         except:
+            log.error("Failed to execute request token")
             return False
 
         if execute_response.status_code != 200:
+            log.error("Bad Response Code: {}".format(response.status_code))
             return False
 
         try:
-            json_parsed_execute = json.loads(execute_response)
+            json_parsed_execute = json.loads(execute_response.content)
         except:
-            return False
+             log.error("Cannot Parse JSON") 
+             return False
 
+        log.info(json_parsed_execute)
         if json_parsed_execute['status'] != 'ok':
+            log.error(json_parsed_execute['msg'])
             return False 
+
+        log.success("Request Completed Successfully")
         return True

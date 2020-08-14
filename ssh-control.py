@@ -1,7 +1,17 @@
+#!/usr/bin/env python3
 import argparse
 import sys
 
 from ssh_control import SSHControlClient
+import logging
+from rich.logging import RichHandler
+
+# Rich Logging
+FORMAT = "%(message)s"
+logging.basicConfig(
+            level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+
 
 
 if __name__ == '__main__':
@@ -23,19 +33,14 @@ if __name__ == '__main__':
 
 
     if args.verify_host:
-        if client.verify_host():
-            print("{} is a valid ssh-control server.".format(args.host))
-        else:
-            print("{} is not a valid ssh-control server.".format(args.host))
+        if not client.verify_host():
+            sys.exit(-1)
+
     elif args.ssh_on:
         if not client.ssh_on():
-            print("Cannot enable SSH on remote, request failed.")
-        else:
-            print("Request completed successfully.")
+            sys.exit(-1)
+
     elif args.ssh_off:
         if not client.ssh_off():
-            print("Cannot disable SSH on remote, request failed.")
-        else:
-            print("Request completed successfully.")
-
+            sys.exit(-1)
     sys.exit(0)

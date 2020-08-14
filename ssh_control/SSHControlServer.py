@@ -4,7 +4,11 @@ import os
 import uuid
 import secrets
 import datetime
-from flask import Flask,jsonify,render_template,send_file,redirect,request
+import threading
+
+import subprocess
+
+from flask import Flask
 
 from flask_restful import Api
 from flask_restful import Resource, reqparse
@@ -15,11 +19,12 @@ from flask_jwt_extended import (
         jwt_required,
         fresh_jwt_required,
         get_jwt_identity,
-        get_jti,
-        get_raw_jwt,
 )
 
+import logging
+
 # Globals
+Lock = threading.Lock()
 GPG = gnupg.GPG()
 GPGRecipient = None
 SecretStore = dict()
@@ -27,6 +32,8 @@ SecretStore = dict()
 
 class ServerInfo(Resource):
     def get(self):
+        log = logging.getLogger('rich')
+        log.info("Server Information Requested")
         return {
             "status" : "ok",
             "version": "0.0.1",
@@ -64,20 +71,28 @@ class Executor(Resource):
             }
  
         # Delete old secrets
+        global Lock
+        Lock.acquire()
+        toDelete = []
         for it in SecretStore:
             elapsed = datetime.datetime.now() - SecretStore[it]['creation']
             if elapsed.total_seconds() >= 60:
-                del SecretStore[it]
+                toDelete.append(it)
+
+        for i in toDelete:
+            del SecretStore[i]
 
         if info['operation_uuid'] not in SecretStore:
+            Lock.release()
             return {
                     "status": "failed",
                     "msg": "invalid operation uuid"
             }
 
-        actual_secret = SecretStore[info['operation_uuid']]
+        actual_secret = SecretStore[info['operation_uuid']]['secret']
         # Delete the secret after access.
         del SecretStore[info['operation_uuid']]
+        Lock.release()
 
         # Verify Secrets
         if str(actual_secret) != str(secret):
@@ -88,10 +103,19 @@ class Executor(Resource):
 
         # Execute the requested operation since the secrets 
         # matched
-        if info['operation'] == 'request-ssh-on':
-            os.system("systemctl start sshd")
-        elif info['operation'] == 'request-ssh-off':
-            os.system("systemctl stop sshd")
+        command = lambda x : ['systemctl', x , 'sshd']
+        try:
+            if info['operation'] == 'request-ssh-on':
+                process = subprocess.Popen(command('start'), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            elif info['operation'] == 'request-ssh-off':
+                process = subprocess.Popen(command('stop'), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except:
+            return {
+                "status": "failed",
+                "msg": "Command failed at remote server",
+            }
+
+        process.wait()
 
         return {
                 "status": "ok"
@@ -128,23 +152,31 @@ class RequestCreator(Resource):
 
         opt_uuid = uuid.uuid4()
         operation_secret = secrets.token_hex(1024) 
+    
 
+        global Lock;
+        Lock.acquire()
         # Delete old secrets
+        toDelete = []
         for it in SecretStore:
             elapsed = datetime.datetime.now() - SecretStore[it]['creation']
             if elapsed.total_seconds() >= 60:
-                del SecretStore[it]
+                toDelete.append(it)
+        
+        for i in toDelete:
+            del SecretStore[i]
 
-        SecretStore[opt_uuid] = {
+        SecretStore[str(opt_uuid)] = {
                 'secret' : operation_secret,
                 'creation': datetime.datetime.now() 
         }
+        Lock.release()
 
         gpg_enc_secret = GPG.encrypt(operation_secret, GPGRecipient)
 
         info = {
             "operation": operation,
-            "operation_uuid": uuid.uuid4(),
+            "operation_uuid": str(opt_uuid),
             "gpg_encrypted_secret" : str(gpg_enc_secret),
         }
 
@@ -191,9 +223,6 @@ class SSHControlServer(Flask):
 
         self.config['JWT_SECRET_KEY'] = secrets.token_hex(4096) # 4096 bytes!
         self.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(minutes=1)
-        self.config['JWT_REFRESH_TOKEN_EXPIRES'] = datetime.timedelta(days=30)
-        self.config['JWT_BLACKLIST_ENABLED'] = True
-        self.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
         self.config['PROPAGATE_EXCEPTIONS'] = True
         self.api = Api(self)
         self.jwt_manager = JWTManager(self)
