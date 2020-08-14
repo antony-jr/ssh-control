@@ -1,0 +1,12 @@
+[Unit]
+Description=SSH Control Server Program
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/gunicorn -b '0.0.0.0:9921' --chdir /root/ssh-control ssh-control-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
