@@ -218,7 +218,6 @@ class CannotGPGEncrypt(Exception):
 class SSHControlServer(Flask):
     def __init__(self):
         super().__init__("SSH Control Server")
-
         self.config_file_location = "{}/.ssh-control.rc".format(os.path.expanduser('~'))
         self.configparser = configparser.ConfigParser()
 

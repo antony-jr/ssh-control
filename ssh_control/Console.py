@@ -24,7 +24,6 @@ def print_thankyou():
 
 
 def ExecuteConfigure():
-    print(__name__)
     print("[bold magenta]SSH Control[/bold magenta] v0.0.1 (Mk.I), Configuration Program")
     print("Copyright (C) 2020, [bold red]Antony Jr[/bold red].")
     print()

@@ -21,15 +21,13 @@ def print_thankyou():
     print("consider to 🌟(star) this project at https://github.com/antony-jr/ssh-control")
 
 
-if __name__ != 'ssh_control':
-    sys.exit(0)
+if os.getenv('RUN_AS_SERVER') is not None:
+    print("[bold blue]SSH Control[/bold blue] v0.0.1 (Mk.I), Server Program")
+    print("Copyright (C) 2020, [bold red]Antony Jr[/bold red].")
+    print()
 
-print("[bold blue]SSH Control[/bold blue] v0.0.1 (Mk.I), Server Program")
-print("Copyright (C) 2020, [bold red]Antony Jr[/bold red].")
-print()
+    application = SSHControlServer()
 
-application = SSHControlServer()
-
-if os.getuid() != 0:
-    log = logging.getLogger('rich')
-    log.warning("Warning you are not running as root, The systemctl command will eventually fail always")
+    if os.getuid() != 0:
+        log = logging.getLogger('rich')
+        log.warning("Warning you are not running as root, The systemctl command will eventually fail always")
