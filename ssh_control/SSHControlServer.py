@@ -240,7 +240,10 @@ class SSHControlServer(Flask):
 
 
         global MyGPGPassphrase
-        MyGPGPassphrase = self.configparser['DEFAULT']['Passphrase'];
+        try:
+            MyGPGPassphrase = self.configparser['DEFAULT']['Passphrase'];
+        except:
+            raise NoRecipient()
 
         self.config['JWT_SECRET_KEY'] = secrets.token_hex(4096) # 4096 bytes!
         self.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(minutes=1)

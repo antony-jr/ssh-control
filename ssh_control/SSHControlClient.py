@@ -25,8 +25,11 @@ class SSHControlClient(object):
         else:
             raise NoRecipient() 
             return;
-       
-        self.recipient = self.configparser['DEFAULT']['ServerGPGRecipient'];
+
+        try:
+            self.recipient = self.configparser['DEFAULT']['ServerGPGRecipient'];
+        except:
+            raise NoRecipient()
 
         # Test GPG Encryption
         test_encrypted = self.gpg.encrypt("SSHControl Test String", self.recipient)
