@@ -22,8 +22,8 @@ setuptools.setup(
     install_requires = ['requests' , 'rich' , 'python-gnupg'],
     entry_points = {
         'console_scripts': [
-            'ssh-control=ssh_control:ExecuteClient',
-            'ssh-control-configure=ssh_control:ExecuteConfigure',
+            'ssh-control=ssh_control.Console:ExecuteClient',
+            'ssh-control-configure=ssh_control.Console:ExecuteConfigure',
         ],
     }
 )

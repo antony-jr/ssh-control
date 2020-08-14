@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
 import argparse
 import sys
+import os
 
-from ssh_control import SSHControlClient
+from .SSHControlClient import SSHControlClient 
+from .SSHControlConfigurator import SSHControlConfigurator
 
 import logging
 from rich.logging import RichHandler
@@ -14,15 +15,32 @@ logging.basicConfig(
             level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 
+
+
 def print_thankyou():
     print("\nThank you for using SSH Control 💖, if you find this project useful then please")
     print("consider to 🌟(star) this project at https://github.com/antony-jr/ssh-control")
 
-if __name__ == '__main__':
-    print("[bold magenta]SSH Control[/bold magenta] v0.0.1 (Mk.I), Client Program")
+
+
+def ExecuteConfigure():
+    print(__name__)
+    print("[bold magenta]SSH Control[/bold magenta] v0.0.1 (Mk.I), Configuration Program")
     print("Copyright (C) 2020, [bold red]Antony Jr[/bold red].")
     print()
 
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('ConfigType',help='Either Server or Client')
+    args = parser.parse_args()
+    SSHControlConfigurator(client=(args.ConfigType.lower() == 'client'))
+    print_thankyou()
+    sys.exit(0)
+
+def ExecuteClient():
+    print("[bold magenta]SSH Control[/bold magenta] v0.0.1 (Mk.I), Client Program")
+    print("Copyright (C) 2020, [bold red]Antony Jr[/bold red].")
+    print()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('host',help='address of ssh-control server')
@@ -44,16 +62,25 @@ if __name__ == '__main__':
     if args.verify_host:
         if not client.verify_host():
             r_code = -1
+        else:
+            logging.getLogger('rich').info("Host is a SSH Control Server Instance")
 
     elif args.ssh_on:
         if not client.ssh_on():
             r_code = -1
+        else:
+            logging.getLogger('rich').info("SSH is now ON")
 
     elif args.ssh_off:
         if not client.ssh_off():
             r_code = -1
+        else:
+            logging.getLogger('rich').info("SSH is now OFF")
+
     else:
         logging.getLogger('rich').info("No Operation Requested, Exiting")
 
     print_thankyou()
     sys.exit(r_code)
+
+

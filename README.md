@@ -55,16 +55,28 @@ The SSH server is turned ON or OFF only if you complete GPG Challenge.
    * Run the configuration script on both server and client
 
 ```
-   $ ssh-control-configure.py Server # on your Server
-   $ ssh-control-configure.py Client # on you PC
+   $ ssh-control-configure Server # on your Server
+   $ # The GPG Recipient is the name of your Key
+   $ # The Required Passphrase is the Server's not your Key
+   $ ssh-control-configure Client # on you PC
+   $ # The Server GPG Recipient is the name of your Server's Key
 ```
 
    * Now Switch on or off your SSH
 
 ```
-   $ ssh-control.py --host yourserver.com:9921 --verify-host # To verify everything
-   $ ssh-control.py --host yourserver.com:9921 --ssh-on # To turn on SSH Server
+   $ ssh-control https://yourserver.com:9921 --verify-host # To verify everything
+   $ ssh-control https://yourserver.com:9921 --ssh-on # To turn on SSH Server
 ```
+
+   * To Run the SSH Control Server using Gunicorn
+
+```
+   $ gunicorn ssh_control # Thats it. 
+```
+
+You can also see the ```SSHControl.DebianBuster.service``` to run this as a service in your 
+debian server.
 
 # Limitations
 
