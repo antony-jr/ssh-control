@@ -11,7 +11,7 @@ setuptools.setup(
     description="A simple and power tool to mange ssh server remotely with GPG.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/antony-jr/shell-control",
+    url="https://github.com/antony-jr/ssh-control",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
