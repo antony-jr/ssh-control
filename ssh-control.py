@@ -5,6 +5,7 @@ import sys
 from ssh_control import SSHControlClient
 import logging
 from rich.logging import RichHandler
+from rich import print
 
 # Rich Logging
 FORMAT = "%(message)s"
@@ -13,8 +14,12 @@ logging.basicConfig(
 )
 
 
-
 if __name__ == '__main__':
+    print("[bold magenta]SSH Control[/bold magenta] v0.0.1 (Mk.I), Client Program")
+    print("Copyright (C) 2020, [bold red]Antony Jr[/bold red].")
+    print()
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument('host',help='address of ssh-control server')
     parser.add_argument('--verify-host', action='store_true', help='verify if the host is a valid ssh-control Server')
