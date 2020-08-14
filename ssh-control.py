@@ -3,6 +3,7 @@ import argparse
 import sys
 
 from ssh_control import SSHControlClient
+
 import logging
 from rich.logging import RichHandler
 from rich import print
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--ssh-on', action='store_true', help='enable SSH Server on Host')
     parser.add_argument('--ssh-off', action='store_true', help='disable SSH Server on Host')
     args = parser.parse_args()
+
 
     client = None
     try:

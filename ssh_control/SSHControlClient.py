@@ -1,12 +1,37 @@
 import gnupg
 import requests
 import json
+import os
+import configparser
 
 import logging 
+
+class NoRecipient(Exception):
+    def __init__(self):
+        self.message = "No Server Recipient was given in client configuration."
+
+class CannotGPGEncrypt(Exception):
+    def __init__(self):
+        self.message = "Cannot do GPG Encryption, Please import your server's Public Key."
 
 class SSHControlClient(object):
     def __init__(self, host):
         self.gpg = gnupg.GPG()
+        self.config_file_location = "{}/.ssh-control.rc".format(os.path.expanduser('~'))
+        self.configparser = configparser.ConfigParser()
+
+        if os.path.exists(self.config_file_location) and os.path.isfile(self.config_file_location):
+            self.configparser.read(self.config_file_location)
+        else:
+            raise NoRecipient() 
+            return;
+       
+        self.recipient = self.configparser['DEFAULT']['ServerGPGRecipient'];
+
+        # Test GPG Encryption
+        test_encrypted = self.gpg.encrypt("SSHControl Test String", self.recipient)
+        if not test_encrypted.ok:
+            raise CannotGPGEncrypt()
 
         if host[len(host)-1] != '/':
             host += '/'
@@ -20,6 +45,8 @@ class SSHControlClient(object):
         self.valid_server_uuid = [
             "f70130bd-c345-4c98-a229-cee3072575bb",
         ]
+
+        
 
     # Returns True if the host is Running SSH Control Server
     def verify_host(self):
@@ -87,10 +114,16 @@ class SSHControlClient(object):
         head = {"Authorization" : "Bearer {}".format(json_parsed['request_token'])}
 
         # Now we have to complete the GPG Challenge
-        secret = self.gpg.decrypt(json_parsed['gpg_encrypted_secret'])
+        secret = self.gpg.decrypt(str(json_parsed['gpg_encrypted_secret']))
+
+        enc_secret = self.gpg.encrypt(str(secret), self.recipient); # Encrypt using Server Public Key.
+
+        if not enc_secret.ok:
+            log.error("Cannot Encrypt using Server's Public Key, Make sure you trust your Server's Public Key")
+            return False
 
         try:
-            execute_response = requests.post(self.host + 'execute', data={"secret": "{}".format(secret) }, headers=head)
+            execute_response = requests.post(self.host + 'execute', data={"secret": "{}".format(str(enc_secret)) }, headers=head)
         except:
             log.error("Failed to execute request token")
             return False
@@ -110,5 +143,5 @@ class SSHControlClient(object):
             log.error(json_parsed_execute['msg'])
             return False 
 
-        log.success("Request Completed Successfully")
+        log.info("Request Completed Successfully")
         return True

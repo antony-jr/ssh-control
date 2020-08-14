@@ -26,6 +26,7 @@ import logging
 # Globals
 Lock = threading.Lock()
 GPG = gnupg.GPG()
+MyGPGPassphrase = None
 GPGRecipient = None
 SecretStore = dict()
 
@@ -56,6 +57,8 @@ class Executor(Resource):
 
     @fresh_jwt_required
     def post(self):
+        logging.getLogger('rich').info("Executing Request Token")
+
         global SecretStore;
         info = get_jwt_identity()
         data = self.parser.parse_args()
@@ -94,8 +97,17 @@ class Executor(Resource):
         del SecretStore[info['operation_uuid']]
         Lock.release()
 
+        global MyGPGPassphrase
+        dec_secret = GPG.decrypt(secret, passphrase=MyGPGPassphrase)
+
+        if not dec_secret.ok:
+            return {
+                    "status": "failed",
+                    "msg": "Cannot decrypt you encrypted secret, Are sure you are using the correct Public Key"
+            }
+
         # Verify Secrets
-        if str(actual_secret) != str(secret):
+        if str(actual_secret) != str(dec_secret):
             return {
                     "status": "failed",
                     "msg": "authentication failed"
@@ -105,10 +117,13 @@ class Executor(Resource):
         # matched
         command = lambda x : ['systemctl', x , 'sshd']
         try:
+            log = logging.getLogger('rich')
             if info['operation'] == 'request-ssh-on':
                 process = subprocess.Popen(command('start'), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                log.info("SSH Server Turned ON")
             elif info['operation'] == 'request-ssh-off':
                 process = subprocess.Popen(command('stop'), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                log.info("SSH Server Turned OFF")
         except:
             return {
                 "status": "failed",
@@ -135,6 +150,8 @@ class RequestCreator(Resource):
         ]
 
     def post(self):
+        logging.getLogger('rich').info("Creating Request Token")
+
         global SecretStore
 
         data = self.parser.parse_args()
@@ -215,11 +232,15 @@ class SSHControlServer(Flask):
         global GPGRecipient
         GPGRecipient = self.configparser['DEFAULT']['GPGRecipient'];
 
+        logging.getLogger('rich').info("Testing GPG Encryption")
         # Test GPG Encryption
         test_encrypted = GPG.encrypt("SSHControl Test String", GPGRecipient)
         if not test_encrypted.ok:
             raise CannotGPGEncrypt()
 
+
+        global MyGPGPassphrase
+        MyGPGPassphrase = self.configparser['DEFAULT']['Passphrase'];
 
         self.config['JWT_SECRET_KEY'] = secrets.token_hex(4096) # 4096 bytes!
         self.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(minutes=1)

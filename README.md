@@ -21,10 +21,66 @@ The SSH server is turned ON or OFF only if you complete GPG Challenge.
 
    * The server then verifies the decrypted secret and then executes your requested operation.
 
+# Instructions
+
+   * Export your Public GPG Key to your Server
+   
+```
+   $ gpg --import your_public_key.asc
+```
+
+   * Trust your Public GPG Key Ultimately from your Server's root login.
+
+```
+   $ gpg --edit-key "Your Name"
+
+   gpg> trust  # Type it in the gpg shell
+   gpg> 5 # To Ultimately trust the key 
+   gpg> y # Confirm your choice
+   gpg> quit
+```
+
+   * Now export your Server's Public GPG Key to your Computer and Also trust it Ultimately.
+
+```
+   $ gpg --image your_server_public_key.asc
+   $ gpg --edit-key "Your Server Recipient Name"
+   
+   gpg> trust
+   gpg> 5
+   gpg> y
+   gpg> quit
+```
+
+   * Run the configuration script on both server and client
+
+```
+   $ ssh-control-configure.py Server # on your Server
+   $ ssh-control-configure.py Client # on you PC
+```
+
+   * Now Switch on or off your SSH
+
+```
+   $ ssh-control.py --host yourserver.com:9921 --verify-host # To verify everything
+   $ ssh-control.py --host yourserver.com:9921 --ssh-on # To turn on SSH Server
+```
+
+# Limitations
+
+   * You will have to put your server's GPG Private Key's passphrase in plain text in your server itself,
+     Without that your commands will not work since it will authenticate at the server with a dialog.
+
+
+I think there is no point in securing your Server's GPG Private Key's passphrase if it is compromised anyway.
+**Also you can use a separate GPG Key for SSH Control only.**   
+
 
 # Installation 
 
-
+```
+   $ pip install git+https://github.com/antony-jr/ssh-control.git
+```
 
 # Feedback
 
