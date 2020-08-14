@@ -19,7 +19,7 @@ setuptools.setup(
         "Operating System :: Linux",
     ],
     python_requires='>=3.6',
-    install_requires = ['requests' , 'rich' , 'python-gnupg'],
+    install_requires = ['flask_restful', 'flask_jwt_extended', 'flask', 'requests' , 'rich' , 'python-gnupg'],
     entry_points = {
         'console_scripts': [
             'ssh-control=ssh_control.Console:ExecuteClient',
