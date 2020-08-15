@@ -72,7 +72,7 @@ The SSH server is turned ON or OFF only if you complete GPG Challenge.
    * To Run the SSH Control Server using Gunicorn
 
 ```
-   $ gunicorn ssh_control # Thats it. 
+   $ RUN_AS_SERVER=True gunicorn ssh_control # Thats it. 
 ```
 
 You can also see the ```SSHControl.DebianBuster.service``` to run this as a service in your 
