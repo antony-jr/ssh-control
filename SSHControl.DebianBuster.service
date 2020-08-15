@@ -5,7 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/gunicorn -b '0.0.0.0:9921' ssh_control
+Environment="RUN_AS_SERVER=1"
+ExecStart=/usr/local/bin/gunicorn -b '0.0.0.0:9921' ssh_control
 Restart=on-failure
 
 [Install]
