@@ -215,10 +215,14 @@ class CannotGPGEncrypt(Exception):
     def __init__(self):
         self.message = "Cannot do GPG Encryption, Please import the required Public Key."
 
+class NoGPGPassphrase(Exception):
+    def __init__(self):
+        self.message = "No GPG Private Key Passphrase was given, it is needed to do decryption at server side."
+
 class SSHControlServer(Flask):
     def __init__(self):
         super().__init__("SSH Control Server")
-        self.config_file_location = "{}/.ssh-control.rc".format(os.path.expanduser('~'))
+        self.config_file_location = "{}/.ssh-control-server.rc".format(os.path.expanduser('~'))
         self.configparser = configparser.ConfigParser()
 
         if os.path.exists(self.config_file_location) and os.path.isfile(self.config_file_location):
@@ -242,7 +246,7 @@ class SSHControlServer(Flask):
         try:
             MyGPGPassphrase = self.configparser['DEFAULT']['Passphrase'];
         except:
-            raise NoRecipient()
+            raise NoGPGPassphrase()
 
         self.config['JWT_SECRET_KEY'] = secrets.token_hex(4096) # 4096 bytes!
         self.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(minutes=1)

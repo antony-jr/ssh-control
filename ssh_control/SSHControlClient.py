@@ -14,10 +14,14 @@ class CannotGPGEncrypt(Exception):
     def __init__(self):
         self.message = "Cannot do GPG Encryption, Please import your server's Public Key."
 
+class NoHost(Exception):
+    def __init__(self):
+        self.message = "No Host was given to do the request."
+
 class SSHControlClient(object):
-    def __init__(self, host):
+    def __init__(self, host = None):
         self.gpg = gnupg.GPG()
-        self.config_file_location = "{}/.ssh-control.rc".format(os.path.expanduser('~'))
+        self.config_file_location = "{}/.ssh-control-client.rc".format(os.path.expanduser('~'))
         self.configparser = configparser.ConfigParser()
 
         if os.path.exists(self.config_file_location) and os.path.isfile(self.config_file_location):
@@ -31,18 +35,27 @@ class SSHControlClient(object):
         except:
             raise NoRecipient()
 
+        if host is None:
+            try:
+                self.host = self.configparser['DEFAULT']['Host'];
+            except:
+                raise NoHost()
+
+            if len(self.host) < 2:
+                raise NoHost()
+        else:
+            if host[len(host)-1] != '/':
+                host += '/'
+            self.host = host
+
+
         # Test GPG Encryption
         test_encrypted = self.gpg.encrypt("SSHControl Test String", self.recipient)
         if not test_encrypted.ok:
             raise CannotGPGEncrypt()
 
-        if host[len(host)-1] != '/':
-            host += '/'
-
         log = logging.getLogger('rich')
-        log.info("Set HOST = {}".format(host))
-
-        self.host = host
+        log.info("Set HOST = {}".format(self.host))
 
         # Hopefully, This list will grow in the future.
         self.valid_server_uuid = [
@@ -57,8 +70,8 @@ class SSHControlClient(object):
 
         try:
             response = requests.get(self.host)
-        except:
-            log.error("Cannot reach host")
+        except Exception as e:
+            log.error("Cannot reach host({})".format(e))
             return False
 
         if response.status_code != 200:

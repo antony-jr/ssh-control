@@ -32,7 +32,11 @@ def ExecuteConfigure():
     parser = argparse.ArgumentParser()
     parser.add_argument('ConfigType',help='Either Server or Client')
     args = parser.parse_args()
-    SSHControlConfigurator(client=(args.ConfigType.lower() == 'client'))
+    try:
+        SSHControlConfigurator(client=(args.ConfigType.lower() == 'client'))
+    except Exception as e:
+        logging.getLogger('rich').error("Cannot Configure SSH Control({})".format(e))
+
     print_thankyou()
     sys.exit(0)
 
@@ -42,7 +46,7 @@ def ExecuteClient():
     print()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('host',help='address of ssh-control server')
+    parser.add_argument('--host',help='address of SSH Control server', required=False)
     parser.add_argument('--verify-host', action='store_true', help='verify if the host is a valid ssh-control Server')
     parser.add_argument('--ssh-on', action='store_true', help='enable SSH Server on Host')
     parser.add_argument('--ssh-off', action='store_true', help='disable SSH Server on Host')
@@ -52,8 +56,8 @@ def ExecuteClient():
     client = None
     try:
         client = SSHControlClient(args.host)
-    except:
-        logging.getLogger('rich').error("Cannot construct SSH Control Client")
+    except Exception as e:
+        logging.getLogger('rich').error("Cannot construct SSH Control Client({})".format(e))
         print_thankyou()
         sys.exit(-1)
 
@@ -78,6 +82,9 @@ def ExecuteClient():
 
     else:
         logging.getLogger('rich').info("No Operation Requested, Exiting")
+
+    if r_code < 0:
+        logging.getLogger('rich').error("Cannot complete the requested operation")
 
     print_thankyou()
     sys.exit(r_code)

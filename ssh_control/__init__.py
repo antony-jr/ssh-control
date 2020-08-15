@@ -31,3 +31,6 @@ if os.getenv('RUN_AS_SERVER') is not None:
     if os.getuid() != 0:
         log = logging.getLogger('rich')
         log.warning("Warning you are not running as root, The systemctl command will eventually fail always")
+else:
+    from .Console import ExecuteClient
+    from .Console import ExecuteConfigure
